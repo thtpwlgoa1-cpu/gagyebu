@@ -11,22 +11,35 @@
 
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #f0f2f5;
-      color: #1a1a2e;
+      background: linear-gradient(160deg, #e0f7fa 0%, #fff9e6 60%, #ffe0b2 100%);
+      color: #1a3a4a;
       min-height: 100vh;
     }
 
     header {
-      background: #4f46e5;
+      background: linear-gradient(90deg, #0ea5e9 0%, #06b6d4 50%, #22d3ee 100%);
       color: white;
       padding: 20px 24px;
       display: flex;
       align-items: center;
       gap: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      box-shadow: 0 4px 16px rgba(6,182,212,0.3);
+      position: relative;
+      overflow: hidden;
     }
 
-    header h1 { font-size: 1.4rem; font-weight: 700; }
+    header::after {
+      content: '🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊';
+      position: absolute;
+      bottom: -6px;
+      left: 0;
+      font-size: 1.1rem;
+      letter-spacing: -4px;
+      opacity: 0.35;
+      white-space: nowrap;
+    }
+
+    header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.5px; }
 
     .container { max-width: 760px; margin: 0 auto; padding: 24px 16px; }
 
@@ -39,29 +52,33 @@
     }
 
     .card {
-      background: white;
-      border-radius: 12px;
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(8px);
+      border-radius: 16px;
       padding: 18px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      box-shadow: 0 2px 12px rgba(6,182,212,0.1);
       text-align: center;
+      border: 1px solid rgba(255,255,255,0.6);
     }
 
-    .card .label { font-size: 0.78rem; color: #888; margin-bottom: 6px; }
+    .card .label { font-size: 0.78rem; color: #6b9aaa; margin-bottom: 6px; font-weight: 500; }
     .card .amount { font-size: 1.3rem; font-weight: 700; }
     .card.income .amount  { color: #059669; }
-    .card.expense .amount { color: #dc2626; }
-    .card.balance .amount { color: #4f46e5; }
+    .card.expense .amount { color: #f97316; }
+    .card.balance .amount { color: #0ea5e9; }
 
     /* 입력 폼 */
     .form-box {
-      background: white;
-      border-radius: 12px;
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(8px);
+      border-radius: 16px;
       padding: 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      box-shadow: 0 2px 12px rgba(6,182,212,0.1);
       margin-bottom: 24px;
+      border: 1px solid rgba(255,255,255,0.6);
     }
 
-    .form-box h2 { font-size: 0.95rem; font-weight: 600; margin-bottom: 14px; color: #444; }
+    .form-box h2 { font-size: 0.95rem; font-weight: 600; margin-bottom: 14px; color: #0e7490; }
 
     .form-row {
       display: grid;
@@ -75,38 +92,48 @@
     input, select {
       width: 100%;
       padding: 10px 12px;
-      border: 1.5px solid #e0e0e0;
-      border-radius: 8px;
+      border: 1.5px solid #bae6fd;
+      border-radius: 10px;
       font-size: 0.9rem;
       outline: none;
-      transition: border-color 0.2s;
-      background: #fafafa;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background: #f0faff;
+      color: #1a3a4a;
     }
 
-    input:focus, select:focus { border-color: #4f46e5; background: white; }
+    input:focus, select:focus {
+      border-color: #06b6d4;
+      background: white;
+      box-shadow: 0 0 0 3px rgba(6,182,212,0.12);
+    }
 
     .btn-add {
       width: 100%;
       padding: 11px;
-      background: #4f46e5;
+      background: linear-gradient(90deg, #f97316, #fb923c);
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 0.95rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       margin-top: 4px;
-      transition: background 0.2s;
+      transition: opacity 0.2s, transform 0.1s;
+      letter-spacing: 0.3px;
     }
 
-    .btn-add:hover { background: #4338ca; }
+    .btn-add:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-add:active { transform: translateY(0); }
+    .btn-add:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
     /* 거래 목록 */
     .list-box {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(8px);
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(6,182,212,0.1);
       overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.6);
     }
 
     .list-header {
@@ -114,33 +141,34 @@
       align-items: center;
       justify-content: space-between;
       padding: 16px 20px;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid #e0f2fe;
     }
 
-    .list-header h2 { font-size: 0.95rem; font-weight: 600; color: #444; }
+    .list-header h2 { font-size: 0.95rem; font-weight: 600; color: #0e7490; }
 
     .filter-row {
       display: flex;
       gap: 8px;
       padding: 12px 20px;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid #e0f2fe;
       flex-wrap: wrap;
     }
 
     .filter-btn {
       padding: 5px 14px;
       border-radius: 20px;
-      border: 1.5px solid #e0e0e0;
+      border: 1.5px solid #bae6fd;
       background: white;
       font-size: 0.82rem;
       cursor: pointer;
       transition: all 0.15s;
-      color: #555;
+      color: #0ea5e9;
+      font-weight: 500;
     }
 
     .filter-btn.active {
-      background: #4f46e5;
-      border-color: #4f46e5;
+      background: linear-gradient(90deg, #0ea5e9, #06b6d4);
+      border-color: transparent;
       color: white;
     }
 
@@ -150,13 +178,13 @@
       display: flex;
       align-items: center;
       padding: 14px 20px;
-      border-bottom: 1px solid #f5f5f5;
+      border-bottom: 1px solid #f0fafb;
       gap: 14px;
       transition: background 0.15s;
     }
 
     .transaction-item:last-child { border-bottom: none; }
-    .transaction-item:hover { background: #fafafa; }
+    .transaction-item:hover { background: #f0faff; }
 
     .tx-icon {
       width: 36px; height: 36px;
@@ -165,29 +193,27 @@
       font-size: 1rem; flex-shrink: 0;
     }
 
-    .tx-icon.income  { background: #d1fae5; }
-    .tx-icon.expense { background: #fee2e2; }
+    .tx-icon.income  { background: #ccfbf1; }
+    .tx-icon.expense { background: #ffedd5; }
 
     .tx-info { flex: 1; min-width: 0; }
     .tx-desc { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .tx-meta { font-size: 0.76rem; color: #aaa; margin-top: 2px; }
+    .tx-meta { font-size: 0.76rem; color: #94b8c4; margin-top: 2px; }
 
-    .tx-amount {
-      font-size: 0.95rem; font-weight: 700; flex-shrink: 0;
-    }
+    .tx-amount { font-size: 0.95rem; font-weight: 700; flex-shrink: 0; }
     .tx-amount.income  { color: #059669; }
-    .tx-amount.expense { color: #dc2626; }
+    .tx-amount.expense { color: #f97316; }
 
     .btn-del {
       background: none; border: none; cursor: pointer;
-      color: #ccc; font-size: 1rem; padding: 4px;
+      color: #c9e6ef; font-size: 1rem; padding: 4px;
       transition: color 0.15s;
     }
-    .btn-del:hover { color: #dc2626; }
+    .btn-del:hover { color: #f97316; }
 
     .empty {
       text-align: center; padding: 40px 20px;
-      color: #bbb; font-size: 0.9rem;
+      color: #a0c4d0; font-size: 0.9rem;
     }
 
     /* 차트 섹션 */
@@ -199,16 +225,18 @@
     }
 
     .chart-box {
-      background: white;
-      border-radius: 12px;
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(8px);
+      border-radius: 16px;
       padding: 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      box-shadow: 0 2px 12px rgba(6,182,212,0.1);
+      border: 1px solid rgba(255,255,255,0.6);
     }
 
     .chart-box h3 {
       font-size: 0.88rem;
       font-weight: 600;
-      color: #444;
+      color: #0e7490;
       margin-bottom: 14px;
       display: flex;
       align-items: center;
@@ -225,7 +253,7 @@
 
     .chart-empty {
       font-size: 0.82rem;
-      color: #ccc;
+      color: #a0c4d0;
       text-align: center;
     }
 
@@ -241,7 +269,7 @@
       align-items: center;
       justify-content: space-between;
       font-size: 0.78rem;
-      color: #555;
+      color: #4a7a8a;
     }
 
     .legend-left {
@@ -258,7 +286,7 @@
 
     .legend-pct {
       font-size: 0.75rem;
-      color: #aaa;
+      color: #94b8c4;
       margin-left: 4px;
     }
 
@@ -277,8 +305,8 @@
 <body>
 
 <header>
-  <span style="font-size:1.5rem;">📒</span>
-  <h1>가계부</h1>
+  <span style="font-size:1.5rem;">☀️</span>
+  <h1>여름 가계부</h1>
 </header>
 
 <div class="container">
@@ -373,8 +401,8 @@
     의료:'💊', 문화:'🎬', 주거:'🏠', 기타:'📌'
   };
 
-  const INCOME_COLORS  = ['#6ee7b7','#34d399','#10b981','#059669','#047857'];
-  const EXPENSE_COLORS = ['#fca5a5','#f87171','#ef4444','#dc2626','#b91c1c','#991b1b','#7f1d1d'];
+  const INCOME_COLORS  = ['#34d399','#2dd4bf','#06b6d4','#0ea5e9','#38bdf8'];
+  const EXPENSE_COLORS = ['#fb923c','#f97316','#fbbf24','#f59e0b','#fb7185','#f43f5e','#fda4af'];
 
   let transactions = [];
   let currentFilter = 'all';
