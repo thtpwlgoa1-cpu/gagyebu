@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>가계부</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -362,6 +363,10 @@
 </div>
 
 <script>
+  const SUPABASE_URL = 'https://elzgeodwiruoxeotadyx.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsemdlb2R3aXJ1b3hlb3RhZHl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0Nzk1MDAsImV4cCI6MjA5NzA1NTUwMH0.f1ZvpU4pi4a5wB_lI6V7kSW730rayv-L09Elj20qSOc';
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
   const CATEGORY_ICONS = {
     급여:'💼', 용돈:'🎁', 부업:'🛠️',
     식비:'🍽️', 교통:'🚌', 쇼핑:'🛍️',
@@ -371,15 +376,13 @@
   const INCOME_COLORS  = ['#6ee7b7','#34d399','#10b981','#059669','#047857'];
   const EXPENSE_COLORS = ['#fca5a5','#f87171','#ef4444','#dc2626','#b91c1c','#991b1b','#7f1d1d'];
 
-  let transactions = JSON.parse(localStorage.getItem('gagyebu') || '[]');
+  let transactions = [];
   let currentFilter = 'all';
   let incomeChartInst = null;
   let expenseChartInst = null;
 
-  // 오늘 날짜 기본값
   document.getElementById('date').valueAsDate = new Date();
 
-  // type 변경 시 카테고리 동적 변경
   document.getElementById('type').addEventListener('change', function() {
     const cat = document.getElementById('category');
     if (this.value === 'income') {
@@ -404,7 +407,24 @@
     return '₩' + n.toLocaleString('ko-KR');
   }
 
-  function addTransaction() {
+  function setLoading(on) {
+    document.querySelector('.btn-add').disabled = on;
+    document.querySelector('.btn-add').textContent = on ? '저장 중...' : '추가하기';
+  }
+
+  async function loadTransactions() {
+    const { data, error } = await db
+      .from('transactions')
+      .select('*')
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    if (error) { console.error('불러오기 실패:', error.message); return; }
+    transactions = data.map(t => ({ ...t, desc: t.description }));
+    render();
+  }
+
+  async function addTransaction() {
     const type     = document.getElementById('type').value;
     const category = document.getElementById('category').value;
     const desc     = document.getElementById('desc').value.trim();
@@ -415,19 +435,29 @@
     if (!amount || amount <= 0) { alert('금액을 올바르게 입력해주세요.'); return; }
     if (!date)   { alert('날짜를 선택해주세요.'); return; }
 
-    transactions.unshift({ id: Date.now(), type, category, desc, amount, date });
-    save();
-    render();
+    setLoading(true);
+    const { error } = await db
+      .from('transactions')
+      .insert({ type, category, description: desc, amount, date });
+    setLoading(false);
+
+    if (error) { alert('저장 실패: ' + error.message); return; }
 
     document.getElementById('desc').value = '';
     document.getElementById('amount').value = '';
     document.getElementById('date').valueAsDate = new Date();
+
+    await loadTransactions();
   }
 
-  function deleteTransaction(id) {
-    transactions = transactions.filter(t => t.id !== id);
-    save();
-    render();
+  async function deleteTransaction(id) {
+    const { error } = await db
+      .from('transactions')
+      .delete()
+      .eq('id', id);
+
+    if (error) { alert('삭제 실패: ' + error.message); return; }
+    await loadTransactions();
   }
 
   function setFilter(f, btn) {
@@ -435,10 +465,6 @@
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     render();
-  }
-
-  function save() {
-    localStorage.setItem('gagyebu', JSON.stringify(transactions));
   }
 
   function buildChartData(type) {
@@ -553,7 +579,7 @@
     }).join('');
   }
 
-  render();
+  loadTransactions();
 </script>
 </body>
 </html>
