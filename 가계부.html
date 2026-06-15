@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>가계부</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #4f46e5;
+      color: white;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    header h1 { font-size: 1.4rem; font-weight: 700; }
+
+    .container { max-width: 760px; margin: 0 auto; padding: 24px 16px; }
+
+    /* 요약 카드 */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+
+    .card .label { font-size: 0.78rem; color: #888; margin-bottom: 6px; }
+    .card .amount { font-size: 1.3rem; font-weight: 700; }
+    .card.income .amount  { color: #059669; }
+    .card.expense .amount { color: #dc2626; }
+    .card.balance .amount { color: #4f46e5; }
+
+    /* 입력 폼 */
+    .form-box {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      margin-bottom: 24px;
+    }
+
+    .form-box h2 { font-size: 0.95rem; font-weight: 600; margin-bottom: 14px; color: #444; }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+      background: #fafafa;
+    }
+
+    input:focus, select:focus { border-color: #4f46e5; background: white; }
+
+    .btn-add {
+      width: 100%;
+      padding: 11px;
+      background: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: background 0.2s;
+    }
+
+    .btn-add:hover { background: #4338ca; }
+
+    /* 거래 목록 */
+    .list-box {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    .list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .list-header h2 { font-size: 0.95rem; font-weight: 600; color: #444; }
+
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      padding: 12px 20px;
+      border-bottom: 1px solid #f0f0f0;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1.5px solid #e0e0e0;
+      background: white;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      color: #555;
+    }
+
+    .filter-btn.active {
+      background: #4f46e5;
+      border-color: #4f46e5;
+      color: white;
+    }
+
+    .transaction-list { list-style: none; }
+
+    .transaction-item {
+      display: flex;
+      align-items: center;
+      padding: 14px 20px;
+      border-bottom: 1px solid #f5f5f5;
+      gap: 14px;
+      transition: background 0.15s;
+    }
+
+    .transaction-item:last-child { border-bottom: none; }
+    .transaction-item:hover { background: #fafafa; }
+
+    .tx-icon {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0;
+    }
+
+    .tx-icon.income  { background: #d1fae5; }
+    .tx-icon.expense { background: #fee2e2; }
+
+    .tx-info { flex: 1; min-width: 0; }
+    .tx-desc { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tx-meta { font-size: 0.76rem; color: #aaa; margin-top: 2px; }
+
+    .tx-amount {
+      font-size: 0.95rem; font-weight: 700; flex-shrink: 0;
+    }
+    .tx-amount.income  { color: #059669; }
+    .tx-amount.expense { color: #dc2626; }
+
+    .btn-del {
+      background: none; border: none; cursor: pointer;
+      color: #ccc; font-size: 1rem; padding: 4px;
+      transition: color 0.15s;
+    }
+    .btn-del:hover { color: #dc2626; }
+
+    .empty {
+      text-align: center; padding: 40px 20px;
+      color: #bbb; font-size: 0.9rem;
+    }
+
+    /* 차트 섹션 */
+    .chart-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .chart-box {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .chart-box h3 {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chart-empty {
+      font-size: 0.82rem;
+      color: #ccc;
+      text-align: center;
+    }
+
+    .chart-legend {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: #555;
+    }
+
+    .legend-left {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend-pct {
+      font-size: 0.75rem;
+      color: #aaa;
+      margin-left: 4px;
+    }
+
+    @media (max-width: 500px) {
+      .chart-section { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 500px) {
+      .summary { grid-template-columns: repeat(3, 1fr); }
+      .card .amount { font-size: 1rem; }
+      .form-row { grid-template-columns: 1fr; }
+      .form-row.three { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:1.5rem;">📒</span>
+  <h1>가계부</h1>
+</header>
+
+<div class="container">
+  <!-- 요약 -->
+  <div class="summary">
+    <div class="card income">
+      <div class="label">총 수입</div>
+      <div class="amount" id="totalIncome">₩0</div>
+    </div>
+    <div class="card expense">
+      <div class="label">총 지출</div>
+      <div class="amount" id="totalExpense">₩0</div>
+    </div>
+    <div class="card balance">
+      <div class="label">잔액</div>
+      <div class="amount" id="balance">₩0</div>
+    </div>
+  </div>
+
+  <!-- 차트 -->
+  <div class="chart-section">
+    <div class="chart-box">
+      <h3>💰 수입 카테고리</h3>
+      <div class="chart-wrap">
+        <canvas id="incomeChart"></canvas>
+        <div class="chart-empty" id="incomeEmpty" style="display:none;">데이터 없음</div>
+      </div>
+      <div class="chart-legend" id="incomeLegend"></div>
+    </div>
+    <div class="chart-box">
+      <h3>💸 지출 카테고리</h3>
+      <div class="chart-wrap">
+        <canvas id="expenseChart"></canvas>
+        <div class="chart-empty" id="expenseEmpty" style="display:none;">데이터 없음</div>
+      </div>
+      <div class="chart-legend" id="expenseLegend"></div>
+    </div>
+  </div>
+
+  <!-- 입력 폼 -->
+  <div class="form-box">
+    <h2>내역 추가</h2>
+    <div class="form-row">
+      <select id="type">
+        <option value="income">💰 수입</option>
+        <option value="expense">💸 지출</option>
+      </select>
+      <select id="category">
+        <option value="급여">급여</option>
+        <option value="용돈">용돈</option>
+        <option value="부업">부업</option>
+        <option value="식비">식비</option>
+        <option value="교통">교통</option>
+        <option value="쇼핑">쇼핑</option>
+        <option value="의료">의료</option>
+        <option value="문화">문화</option>
+        <option value="주거">주거</option>
+        <option value="기타">기타</option>
+      </select>
+    </div>
+    <div class="form-row three">
+      <input type="text" id="desc" placeholder="내용 (예: 점심식사)" />
+      <input type="number" id="amount" placeholder="금액 (원)" min="0" />
+      <input type="date" id="date" />
+    </div>
+    <button class="btn-add" onclick="addTransaction()">추가하기</button>
+  </div>
+
+  <!-- 거래 목록 -->
+  <div class="list-box">
+    <div class="list-header">
+      <h2>거래 내역</h2>
+      <span id="txCount" style="font-size:0.8rem;color:#aaa;"></span>
+    </div>
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="setFilter('all', this)">전체</button>
+      <button class="filter-btn" onclick="setFilter('income', this)">수입</button>
+      <button class="filter-btn" onclick="setFilter('expense', this)">지출</button>
+    </div>
+    <ul class="transaction-list" id="txList"></ul>
+  </div>
+</div>
+
+<script>
+  const CATEGORY_ICONS = {
+    급여:'💼', 용돈:'🎁', 부업:'🛠️',
+    식비:'🍽️', 교통:'🚌', 쇼핑:'🛍️',
+    의료:'💊', 문화:'🎬', 주거:'🏠', 기타:'📌'
+  };
+
+  const INCOME_COLORS  = ['#6ee7b7','#34d399','#10b981','#059669','#047857'];
+  const EXPENSE_COLORS = ['#fca5a5','#f87171','#ef4444','#dc2626','#b91c1c','#991b1b','#7f1d1d'];
+
+  let transactions = JSON.parse(localStorage.getItem('gagyebu') || '[]');
+  let currentFilter = 'all';
+  let incomeChartInst = null;
+  let expenseChartInst = null;
+
+  // 오늘 날짜 기본값
+  document.getElementById('date').valueAsDate = new Date();
+
+  // type 변경 시 카테고리 동적 변경
+  document.getElementById('type').addEventListener('change', function() {
+    const cat = document.getElementById('category');
+    if (this.value === 'income') {
+      cat.innerHTML = `
+        <option value="급여">급여</option>
+        <option value="용돈">용돈</option>
+        <option value="부업">부업</option>
+        <option value="기타">기타</option>`;
+    } else {
+      cat.innerHTML = `
+        <option value="식비">식비</option>
+        <option value="교통">교통</option>
+        <option value="쇼핑">쇼핑</option>
+        <option value="의료">의료</option>
+        <option value="문화">문화</option>
+        <option value="주거">주거</option>
+        <option value="기타">기타</option>`;
+    }
+  });
+
+  function fmt(n) {
+    return '₩' + n.toLocaleString('ko-KR');
+  }
+
+  function addTransaction() {
+    const type     = document.getElementById('type').value;
+    const category = document.getElementById('category').value;
+    const desc     = document.getElementById('desc').value.trim();
+    const amount   = parseInt(document.getElementById('amount').value);
+    const date     = document.getElementById('date').value;
+
+    if (!desc)   { alert('내용을 입력해주세요.'); return; }
+    if (!amount || amount <= 0) { alert('금액을 올바르게 입력해주세요.'); return; }
+    if (!date)   { alert('날짜를 선택해주세요.'); return; }
+
+    transactions.unshift({ id: Date.now(), type, category, desc, amount, date });
+    save();
+    render();
+
+    document.getElementById('desc').value = '';
+    document.getElementById('amount').value = '';
+    document.getElementById('date').valueAsDate = new Date();
+  }
+
+  function deleteTransaction(id) {
+    transactions = transactions.filter(t => t.id !== id);
+    save();
+    render();
+  }
+
+  function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  }
+
+  function save() {
+    localStorage.setItem('gagyebu', JSON.stringify(transactions));
+  }
+
+  function buildChartData(type) {
+    const map = {};
+    transactions.filter(t => t.type === type).forEach(t => {
+      map[t.category] = (map[t.category] || 0) + t.amount;
+    });
+    const labels = Object.keys(map);
+    const data   = Object.values(map);
+    return { labels, data, total: data.reduce((s, v) => s + v, 0) };
+  }
+
+  function renderCharts() {
+    ['income', 'expense'].forEach(type => {
+      const { labels, data, total } = buildChartData(type);
+      const canvas  = document.getElementById(type + 'Chart');
+      const empty   = document.getElementById(type + 'Empty');
+      const legend  = document.getElementById(type + 'Legend');
+      const colors  = type === 'income' ? INCOME_COLORS : EXPENSE_COLORS;
+      const inst    = type === 'income' ? incomeChartInst : expenseChartInst;
+
+      if (inst) inst.destroy();
+
+      if (total === 0) {
+        canvas.style.display = 'none';
+        empty.style.display  = 'block';
+        legend.innerHTML = '';
+        return;
+      }
+
+      canvas.style.display = 'block';
+      empty.style.display  = 'none';
+
+      const chart = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: labels.map((_, i) => colors[i % colors.length]),
+            borderWidth: 2,
+            borderColor: '#fff',
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          cutout: '62%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => ` ${ctx.label}: ₩${ctx.raw.toLocaleString('ko-KR')}`
+              }
+            }
+          }
+        }
+      });
+
+      if (type === 'income') incomeChartInst = chart;
+      else expenseChartInst = chart;
+
+      legend.innerHTML = labels.map((label, i) => {
+        const pct = Math.round(data[i] / total * 100);
+        return `
+          <div class="legend-item">
+            <div class="legend-left">
+              <div class="legend-dot" style="background:${colors[i % colors.length]}"></div>
+              <span>${CATEGORY_ICONS[label] || ''} ${label}</span>
+            </div>
+            <span>₩${data[i].toLocaleString('ko-KR')}<span class="legend-pct">${pct}%</span></span>
+          </div>`;
+      }).join('');
+    });
+  }
+
+  function render() {
+    const filtered = currentFilter === 'all'
+      ? transactions
+      : transactions.filter(t => t.type === currentFilter);
+
+    const totalIncome  = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    const totalExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const balance      = totalIncome - totalExpense;
+
+    document.getElementById('totalIncome').textContent  = fmt(totalIncome);
+    document.getElementById('totalExpense').textContent = fmt(totalExpense);
+    document.getElementById('balance').textContent      = fmt(balance);
+    document.getElementById('balance').style.color      = balance < 0 ? '#dc2626' : '#4f46e5';
+    document.getElementById('txCount').textContent      = `총 ${filtered.length}건`;
+
+    renderCharts();
+
+    const list = document.getElementById('txList');
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="empty">내역이 없습니다.</div>';
+      return;
+    }
+
+    list.innerHTML = filtered.map(t => {
+      const icon = CATEGORY_ICONS[t.category] || '📌';
+      const sign = t.type === 'income' ? '+' : '-';
+      return `
+        <li class="transaction-item">
+          <div class="tx-icon ${t.type}">${icon}</div>
+          <div class="tx-info">
+            <div class="tx-desc">${t.desc}</div>
+            <div class="tx-meta">${t.date} · ${t.category}</div>
+          </div>
+          <div class="tx-amount ${t.type}">${sign}${fmt(t.amount)}</div>
+          <button class="btn-del" onclick="deleteTransaction(${t.id})" title="삭제">✕</button>
+        </li>`;
+    }).join('');
+  }
+
+  render();
+</script>
+</body>
+</html>
