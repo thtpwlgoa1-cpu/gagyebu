@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>가계부</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -216,84 +215,6 @@
       color: #a0c4d0; font-size: 0.9rem;
     }
 
-    /* 차트 섹션 */
-    .chart-section {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-
-    .chart-box {
-      background: rgba(255,255,255,0.82);
-      backdrop-filter: blur(8px);
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 2px 12px rgba(6,182,212,0.1);
-      border: 1px solid rgba(255,255,255,0.6);
-    }
-
-    .chart-box h3 {
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: #0e7490;
-      margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .chart-wrap {
-      position: relative;
-      height: 180px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .chart-empty {
-      font-size: 0.82rem;
-      color: #a0c4d0;
-      text-align: center;
-    }
-
-    .chart-legend {
-      margin-top: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.78rem;
-      color: #4a7a8a;
-    }
-
-    .legend-left {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-    }
-
-    .legend-dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .legend-pct {
-      font-size: 0.75rem;
-      color: #94b8c4;
-      margin-left: 4px;
-    }
-
-    @media (max-width: 500px) {
-      .chart-section { grid-template-columns: 1fr; }
-    }
-
     @media (max-width: 500px) {
       .summary { grid-template-columns: repeat(3, 1fr); }
       .card .amount { font-size: 1rem; }
@@ -323,26 +244,6 @@
     <div class="card balance">
       <div class="label">잔액</div>
       <div class="amount" id="balance">₩0</div>
-    </div>
-  </div>
-
-  <!-- 차트 -->
-  <div class="chart-section">
-    <div class="chart-box">
-      <h3>💰 수입 카테고리</h3>
-      <div class="chart-wrap">
-        <canvas id="incomeChart"></canvas>
-        <div class="chart-empty" id="incomeEmpty" style="display:none;">데이터 없음</div>
-      </div>
-      <div class="chart-legend" id="incomeLegend"></div>
-    </div>
-    <div class="chart-box">
-      <h3>💸 지출 카테고리</h3>
-      <div class="chart-wrap">
-        <canvas id="expenseChart"></canvas>
-        <div class="chart-empty" id="expenseEmpty" style="display:none;">데이터 없음</div>
-      </div>
-      <div class="chart-legend" id="expenseLegend"></div>
     </div>
   </div>
 
@@ -401,13 +302,8 @@
     의료:'💊', 문화:'🎬', 주거:'🏠', 기타:'📌'
   };
 
-  const INCOME_COLORS  = ['#34d399','#2dd4bf','#06b6d4','#0ea5e9','#38bdf8'];
-  const EXPENSE_COLORS = ['#fb923c','#f97316','#fbbf24','#f59e0b','#fb7185','#f43f5e','#fda4af'];
-
   let transactions = [];
   let currentFilter = 'all';
-  let incomeChartInst = null;
-  let expenseChartInst = null;
 
   document.getElementById('date').valueAsDate = new Date();
 
@@ -495,79 +391,6 @@
     render();
   }
 
-  function buildChartData(type) {
-    const map = {};
-    transactions.filter(t => t.type === type).forEach(t => {
-      map[t.category] = (map[t.category] || 0) + t.amount;
-    });
-    const labels = Object.keys(map);
-    const data   = Object.values(map);
-    return { labels, data, total: data.reduce((s, v) => s + v, 0) };
-  }
-
-  function renderCharts() {
-    ['income', 'expense'].forEach(type => {
-      const { labels, data, total } = buildChartData(type);
-      const canvas  = document.getElementById(type + 'Chart');
-      const empty   = document.getElementById(type + 'Empty');
-      const legend  = document.getElementById(type + 'Legend');
-      const colors  = type === 'income' ? INCOME_COLORS : EXPENSE_COLORS;
-      const inst    = type === 'income' ? incomeChartInst : expenseChartInst;
-
-      if (inst) inst.destroy();
-
-      if (total === 0) {
-        canvas.style.display = 'none';
-        empty.style.display  = 'block';
-        legend.innerHTML = '';
-        return;
-      }
-
-      canvas.style.display = 'block';
-      empty.style.display  = 'none';
-
-      const chart = new Chart(canvas, {
-        type: 'doughnut',
-        data: {
-          labels,
-          datasets: [{
-            data,
-            backgroundColor: labels.map((_, i) => colors[i % colors.length]),
-            borderWidth: 2,
-            borderColor: '#fff',
-            hoverOffset: 6
-          }]
-        },
-        options: {
-          cutout: '62%',
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: ctx => ` ${ctx.label}: ₩${ctx.raw.toLocaleString('ko-KR')}`
-              }
-            }
-          }
-        }
-      });
-
-      if (type === 'income') incomeChartInst = chart;
-      else expenseChartInst = chart;
-
-      legend.innerHTML = labels.map((label, i) => {
-        const pct = Math.round(data[i] / total * 100);
-        return `
-          <div class="legend-item">
-            <div class="legend-left">
-              <div class="legend-dot" style="background:${colors[i % colors.length]}"></div>
-              <span>${CATEGORY_ICONS[label] || ''} ${label}</span>
-            </div>
-            <span>₩${data[i].toLocaleString('ko-KR')}<span class="legend-pct">${pct}%</span></span>
-          </div>`;
-      }).join('');
-    });
-  }
-
   function render() {
     const filtered = currentFilter === 'all'
       ? transactions
@@ -580,10 +403,8 @@
     document.getElementById('totalIncome').textContent  = fmt(totalIncome);
     document.getElementById('totalExpense').textContent = fmt(totalExpense);
     document.getElementById('balance').textContent      = fmt(balance);
-    document.getElementById('balance').style.color      = balance < 0 ? '#dc2626' : '#4f46e5';
+    document.getElementById('balance').style.color      = balance < 0 ? '#f97316' : '#0ea5e9';
     document.getElementById('txCount').textContent      = `총 ${filtered.length}건`;
-
-    renderCharts();
 
     const list = document.getElementById('txList');
     if (filtered.length === 0) {
